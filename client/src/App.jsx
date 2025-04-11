@@ -4,8 +4,8 @@ import Navbar from './components/layout/Navbar';
 import Home from './components/pages/Home';
 import Register from './components/auth/Register';
 import Login from './components/auth/Login';
-import Profile from './components/auth/Profile';
-import ApiStatus from './components/pages/ApiStatus';
+import Profile from './components/auth/profile';
+import ApiStatus from './components/pages/apistatus';
 import { setAuthToken } from './utils/auth';
 
 const App = () => {

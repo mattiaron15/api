@@ -5,22 +5,22 @@ const ApiStatus = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const checkApiStatus = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/health');
-        const data = await response.json();
-        setStatus(data);
-        setError(null);
-      } catch (err) {
-        console.error('Errore durante la verifica dello stato dell\'API:', err);
-        setError('Impossibile connettersi all\'API. Verifica che il server sia in esecuzione.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const checkApiStatus = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/health');
+      const data = await response.json();
+      setStatus(data);
+      setError(null);
+    } catch (err) {
+      console.error('Errore durante la verifica dello stato dell\'API:', err);
+      setError('Impossibile connettersi all\'API. Verifica che il server sia in esecuzione.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     checkApiStatus();
     // Aggiorna lo stato ogni 30 secondi
     const interval = setInterval(checkApiStatus, 30000);
@@ -58,7 +58,7 @@ const ApiStatus = () => {
         </div>
       )}
       <div className="mt-3">
-        <button className="btn" onClick={() => window.location.reload()}>Aggiorna</button>
+        <button className="btn" onClick={checkApiStatus}>Aggiorna</button>
       </div>
     </div>
   );

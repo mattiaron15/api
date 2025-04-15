@@ -62,7 +62,7 @@ const Profile = ({ user: initialUser }) => {
       <h2 className="text-center mb-3">Profilo Utente</h2>
       {user && (
         <div>
-          <p><strong>ID:</strong> {user._id}</p>
+          <p><strong>ID:</strong> {user.id || user._id}</p>
           <p><strong>Username:</strong> {user.username}</p>
           <p><strong>Email:</strong> {user.email}</p>
           <p><strong>Data di registrazione:</strong> {new Date(user.createdAt).toLocaleString()}</p>

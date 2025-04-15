@@ -4,7 +4,9 @@ import Navbar from './components/layout/Navbar';
 import Home from './components/pages/Home';
 import Register from './components/auth/Register';
 import Login from './components/auth/Login';
-import Profile from './components/auth/profile';
+import Profile from './components/auth/Profile';
+import UsersList from './components/auth/UsersList';
+import ResetPassword from './components/auth/ResetPassword';
 import ApiStatus from './components/pages/apistatus';
 import { setAuthToken } from './utils/auth';
 
@@ -19,8 +21,10 @@ const App = () => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       if (token) {
+        // Applica il token a tutte le richieste future
         setAuthToken(token);
         try {
+          // Verifica la validità del token
           const res = await fetch('/api/auth/me');
           if (res.ok) {
             const userData = await res.json();
@@ -28,13 +32,21 @@ const App = () => {
             setIsAuthenticated(true);
           } else {
             // Token non valido o scaduto
+            console.log('Token non valido, effettua il logout');
             localStorage.removeItem('token');
             setAuthToken(null);
           }
         } catch (err) {
           console.error('Errore durante la verifica dell\'autenticazione:', err);
-          localStorage.removeItem('token');
-          setAuthToken(null);
+          // Manteniamo il token in caso di errori di rete temporanei
+          // per evitare logout indesiderati durante problemi di connessione
+          if (err.message.includes('Failed to fetch') || err.message.includes('Network Error')) {
+            console.log('Errore di rete, mantengo la sessione');
+            setIsAuthenticated(true);
+          } else {
+            localStorage.removeItem('token');
+            setAuthToken(null);
+          }
         }
       }
       setLoading(false);
@@ -69,7 +81,7 @@ const App = () => {
 
   return (
     <>
-      <Navbar isAuthenticated={isAuthenticated} logout={logout} />
+      <Navbar isAuthenticated={isAuthenticated} isAdmin={user?.isAdmin} logout={logout} />
       <div className="container">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -80,7 +92,13 @@ const App = () => {
               <Profile user={user} />
             </PrivateRoute>
           } />
+          <Route path="/users" element={
+            <PrivateRoute>
+              <UsersList />
+            </PrivateRoute>
+          } />
           <Route path="/api-status" element={<ApiStatus />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </div>
     </>

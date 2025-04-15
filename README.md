@@ -36,7 +36,7 @@ Crea un file `.env` nella root del progetto con le seguenti variabili:
 ```
 MONGO_URI=mongodb://localhost:27017/auth-api
 JWT_SECRET=auth_api_secret_key
-PORT=5000
+PORT=8080
 NODE_ENV=development
 ```
 

@@ -139,4 +139,107 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/auth/users
+// @desc    Ottieni tutti gli utenti registrati
+// @access  Private (solo admin)
+router.get('/users', auth, async (req, res) => {
+  try {
+    // Verifica se l'utente è un amministratore
+    const user = await User.findById(req.user.id);
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ msg: 'Accesso negato: richiesti privilegi di amministratore' });
+    }
+    
+    // Ottieni tutti gli utenti dal database (escludi le password)
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Errore del server');
+  }
+});
+
+// @route   PUT /api/auth/users/:id/admin
+// @desc    Aggiorna lo stato admin di un utente
+// @access  Private (solo admin)
+router.put('/users/:id/admin', auth, async (req, res) => {
+  try {
+    // Verifica se l'utente che fa la richiesta è un amministratore
+    const requestingUser = await User.findById(req.user.id);
+    if (!requestingUser || !requestingUser.isAdmin) {
+      return res.status(403).json({ msg: 'Accesso negato: richiesti privilegi di amministratore' });
+    }
+    
+    // Ottieni l'utente da aggiornare
+    const userToUpdate = await User.findById(req.params.id);
+    if (!userToUpdate) {
+      return res.status(404).json({ msg: 'Utente non trovato' });
+    }
+    
+    // Aggiorna lo stato admin dell'utente (inverti il valore corrente)
+    userToUpdate.isAdmin = !userToUpdate.isAdmin;
+    
+    // Salva le modifiche
+    await userToUpdate.save();
+    
+    // Restituisci l'utente aggiornato (senza la password)
+    res.json({
+      _id: userToUpdate._id,
+      username: userToUpdate.username,
+      email: userToUpdate.email,
+      isAdmin: userToUpdate.isAdmin,
+      createdAt: userToUpdate.createdAt
+    });
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(400).json({ msg: 'ID utente non valido' });
+    }
+    res.status(500).send('Errore del server');
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Cambia la password di un utente
+// @access  Public
+router.post('/reset-password', [
+  check('email', 'Inserisci un indirizzo email valido').isEmail(),
+  check('oldPassword', 'Password attuale richiesta').exists(),
+  check('newPassword', 'Inserisci una nuova password con almeno 6 caratteri').isLength({ min: 6 })
+], async (req, res) => {
+  // Validazione input
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email, oldPassword, newPassword } = req.body;
+
+  try {
+    // Verifica se l'utente esiste
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: 'Utente non trovato' });
+    }
+
+    // Verifica la vecchia password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Password attuale non corretta' });
+    }
+
+    // Cripta la nuova password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // Salva l'utente con la nuova password
+    await user.save();
+
+    res.json({ msg: 'Password aggiornata con successo' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Errore del server');
+  }
+});
+
 module.exports = router;
